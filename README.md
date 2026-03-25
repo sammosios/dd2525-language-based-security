@@ -7,7 +7,7 @@ Docker must be installed and running.
 Add the following alias to your shell RC file (`.bashrc`, `.zshrc`, etc.):
 
 ```sh
-alias trp='docker run -it --rm -v $(pwd):/workspace ghcr.io/troupelang/troupe:latest /bin/bash'
+alias trp='docker run -it --rm -v $(pwd):/Troupe/code ghcr.io/troupelang/troupe:latest /bin/bash'
 ```
 
 Reload your shell:
