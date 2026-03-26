@@ -1,4 +1,22 @@
-(* Placeholder for the dating-client. Note that in order to communicate 
-   with your server you will need to create the corresponding trustmap *)
-   
-0
+(* Starting file for the client *)
+
+import lists
+let fun client () = (* TODO: finish this *)
+         let val _ = receive [hn ("NEWMATCH", _ )
+                                => printString "New match received"
+                             ]
+         in client ()
+         end
+
+    (* Our main function starts the client *)
+
+    fun main () =       
+        let val thisNode = node (self ())
+            val _ = printString ("Running node with identifier: " ^ thisNode)
+            val _ =  register ("datingClient", spawn client, authority)
+        in 
+        send (whereis ("@server", "datingServer"), ("NEWPROFILE", thisNode));
+        ()
+        end
+in main ()
+end
