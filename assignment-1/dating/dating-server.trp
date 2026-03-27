@@ -1,12 +1,34 @@
 (* Starting file for the server *)
 
 import lists
-let fun server () = (* TODO: finish this *)
-         let val _ = receive [hn ("NEWPROFILE", _ )
-                                => printString "New profile received"
-                             ]
-         in server ()
-         end
+
+let 
+    fun boolToString b =
+        if b then "true" else "false"
+
+    fun printFoods foods =
+        case foods of
+            [] => ()
+        | x::xs =>
+                (printString (x ^ " ");
+                printFoods xs)
+
+    fun server () = (* TODO: finish this *)
+            let val _ = receive [hn ("NEWPROFILE", ((label, name, year, flag, foods), _, nodeId)) =>
+                                    let
+                                        val _ = printString ("Label: " ^ label)
+                                        val _ = printString ("Name: " ^ name)
+                                        val _ = printString ("Flag: " ^ boolToString flag)
+                                        val _ = printString ("Foods: ")
+                                        val _ = printFoods foods
+                                        val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
+                                    
+                                    in 
+                                        ()
+                                    end
+                                ]
+            in server ()
+            end
 
     (* Our main function starts the server and then requests the
        dispatcher to send some clients this way. *)
