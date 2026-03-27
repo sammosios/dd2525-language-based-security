@@ -13,7 +13,7 @@ let
                 (printString (x ^ " ");
                 printFoods xs)
 
-    fun server () = (* TODO: finish this *)
+    fun server state = (* TODO: finish this *)
             let val _ = receive [hn ("NEWPROFILE", ((label, name, year, flag, foods), _, nodeId)) =>
                                     let
                                         val _ = printString ("Label: " ^ label)
@@ -22,12 +22,16 @@ let
                                         val _ = printString ("Foods: ")
                                         val _ = printFoods foods
                                         val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
-                                    
-                                    in 
-                                        ()
+                                        
+                                        val _ = printFoods state
+                                        val new_state =(name) :: state
+
+                                    in
+                                        server new_state
                                     end
+
                                 ]
-            in server ()
+            in ()
             end
 
     (* Our main function starts the server and then requests the
@@ -36,7 +40,9 @@ let
     fun main () =       
         let val thisNode = node (self ())
             val _ = printString ("Running node with identifier: " ^ thisNode)
-            val _ =  register ("datingServer", spawn server, authority)
+            (*val pid = spawn (server []) *)
+            val pid = spawn (fn () => server [])
+            val _ =  register ("datingServer", pid, authority)
         in  (* TODO: Feel free to comment out the next line
                      while you develop your solution and work on a few 
                      custom clients;  *)
