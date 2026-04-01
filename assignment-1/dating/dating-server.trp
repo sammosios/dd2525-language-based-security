@@ -6,12 +6,12 @@ let
     fun boolToString b =
         if b then "true" else "false"
 
-    fun printFoods foods =
-        case foods of
+    fun printList list =
+        case list of
             [] => ()
         | x::xs =>
                 (printString (x ^ " ");
-                printFoods xs)
+                printList xs)
 
     fun server state = (* TODO: finish this *)
             let val _ = receive [hn ("NEWPROFILE", ((label, name, year, flag, foods), _, nodeId)) =>
@@ -20,10 +20,10 @@ let
                                         val _ = printString ("Name: " ^ name)
                                         val _ = printString ("Flag: " ^ boolToString flag)
                                         val _ = printString ("Foods: ")
-                                        val _ = printFoods foods
+                                        val _ = printList foods
                                         val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
-                                        
-                                        val _ = printFoods state
+
+                                        val _ = printList state
                                         val new_state =(name) :: state
 
                                     in
