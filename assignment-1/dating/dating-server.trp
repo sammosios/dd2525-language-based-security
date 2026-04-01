@@ -19,22 +19,43 @@ let
             ()
         end
 
-    fun server state = (* TODO: finish this *)
-            let val _ = receive [hn ("NEWPROFILE", ((level, name, year, gender, foods), _, nodeId)) =>
-                                    let
-                                        val _ = printProfile (level, name, year, gender, foods)
-                                        val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
+    fun filter_agent agent lst =
+        case lst of
+            [] => []
+        | x::xs =>
+            if agent x then
+                x :: filter_agent agent xs
+            else
+        filter_agent agent xs
 
-                                        val new_state =(name raisedTo level, year raisedTo level, gender raisedTo level, foods raisedTo level) :: state
-                                        val _ = printWithLabels(new_state)
 
-                                    in
-                                        server new_state
-                                    end
+    fun server state =
+        let val _ = receive [
+                hn ("NEWPROFILE", ((level, name, year, gender, foods), agent, nodeId)) =>
+                let
+                    val _ = printProfile (level, name, year, gender, foods)
+                    val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
 
-                                ]
-            in ()
-            end
+                    (* filter *)
+                    val matching = filter_agent agent state
+
+                    (* debug print *)
+                    val _ = printString "Matching profiles:\n"
+                    val _ = printWithLabels matching
+
+                    val new_state =
+                    (name raisedTo level,
+                    year raisedTo level,
+                    gender raisedTo level,
+                    foods raisedTo level) :: state
+
+                in
+                    server new_state
+                end
+            ]
+        in
+            ()
+        end
 
     (* Our main function starts the server and then requests the
        dispatcher to send some clients this way. *)

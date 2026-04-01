@@ -18,7 +18,13 @@ let fun client () = (* TODO: finish this *)
             val profile = (`{alice}`, "alice", 2002, true, ["Arnaki", "Kontosouvli", "Loukaniko Xwriatiko"])
             fun agent prof =
                 ("preference", "maybeProfile")
-            val data = (profile, agent, thisNode)         
+            fun is2002 tuple =
+                let
+                    val (_, year, _, _) = tuple
+                in
+                    year = 2002
+                end
+            val data = (profile, is2002, thisNode)         
         in
         send (whereis ("@server", "datingServer"), ("NEWPROFILE", data));         
         ()
