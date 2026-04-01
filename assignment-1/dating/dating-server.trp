@@ -6,25 +6,27 @@ let
     fun boolToString b =
         if b then "true" else "false"
 
-    fun printList list =
-        case list of
-            [] => ()
-        | x::xs =>
-                (printString (x ^ " ");
-                printList xs)
+    fun boolToGender b =
+        if b then "female" else "male"
+
+    fun printProfile (a, b, c, d, e) =
+        let val _ = print (a)
+            val _ = print (b)
+            val _ = print (c)
+            val _ = print (boolToGender d)
+            val _ = print (e)
+        in
+            ()
+        end
 
     fun server state = (* TODO: finish this *)
-            let val _ = receive [hn ("NEWPROFILE", ((label, name, year, flag, foods), _, nodeId)) =>
+            let val _ = receive [hn ("NEWPROFILE", ((level, name, year, gender, foods), _, nodeId)) =>
                                     let
-                                        val _ = printString ("Label: " ^ label)
-                                        val _ = printString ("Name: " ^ name)
-                                        val _ = printString ("Flag: " ^ boolToString flag)
-                                        val _ = printString ("Foods: ")
-                                        val _ = printList foods
+                                        val _ = printProfile (level, name, year, gender, foods)
                                         val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
 
-                                        val _ = printList state
-                                        val new_state =(name) :: state
+                                        val new_state =(name raisedTo level, year raisedTo level, gender raisedTo level, foods raisedTo level) :: state
+                                        val _ = printWithLabels(new_state)
 
                                     in
                                         server new_state
