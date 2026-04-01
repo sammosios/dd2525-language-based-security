@@ -19,6 +19,7 @@ let
             ()
         end
 
+    (* Check if current state matches with new profile *)
     fun filter_agent agent lst =
         case lst of
             [] => []
@@ -28,6 +29,16 @@ let
             else
         filter_agent agent xs
 
+    (* Check if the current profile current profile matches with the wanted profiles *)
+    fun filter_list profiles_lst profile  =
+        case profiles_lst of        
+            [] => []
+        | (n, y, g, f, agent2, node) :: rest =>
+            if agent2 profile then
+                (n, y, g, f, agent2, node) :: filter_list rest profile
+            else
+                filter_list rest profile
+        
 
     fun server state =
         let val _ = receive [
@@ -36,18 +47,24 @@ let
                     val _ = printProfile (level, name, year, gender, foods)
                     val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
 
-                    (* filter *)
+                    (* filter state by new user *)
                     val matching = filter_agent agent state
-
-                    (* debug print *)
                     val _ = printString "Matching profiles:\n"
                     val _ = printWithLabels matching
+
+                    (* second round of filtering *)
+                    val matching2 = filter_list matching (name, year, gender, foods, agent, nodeId)
+                    val _ = printString "Matching profiles round 2:\n"
+                    val _ = printWithLabels matching2
 
                     val new_state =
                     (name raisedTo level,
                     year raisedTo level,
                     gender raisedTo level,
-                    foods raisedTo level) :: state
+                    foods raisedTo level, 
+                    agent raisedTo level, 
+                    nodeId raisedTo level
+                    ) :: state
 
                 in
                     server new_state
