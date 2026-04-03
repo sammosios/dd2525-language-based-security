@@ -15,9 +15,13 @@ let fun client () = (* TODO: finish this *)
         let val thisNode = node (self ())
             val _ = printString ("Running node with identifier: " ^ thisNode)
             val _ =  register ("datingClient", spawn client, authority)
-            val profile = (`{alice}`, "alice", 2002, true, ["Arnaki", "Kontosouvli", "Loukaniko Xwriatiko"])
+            val profile = (`{palice}`, "palice", 2003, true, ["Arnaki", "Kontosouvli", "Loukaniko Xwriatiko"])
             fun agent prof =
-                ("preference", "maybeProfile")
+                let
+                    val ((_, year, _, _), _, _) = prof
+                in
+                    year = 2003
+                end
             val data = (profile, agent, thisNode)         
         in
         send (whereis ("@server", "datingServer"), ("NEWPROFILE", data));         

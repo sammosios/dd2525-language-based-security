@@ -19,26 +19,25 @@ let
             ()
         end
 
-    (* Check if current state matches with new profile *)
-    fun filter_agent agent lst =
-        case lst of
+    (* Check if new profile "likes" any of the profiles in the state *)
+    fun check_new_profile_likes agent profiles_list =
+        case profiles_list of
             [] => []
-        | x::xs =>
-            if agent x then
-                x :: filter_agent agent xs
+        | p::rest_of_profiles =>
+            if agent p then
+                p :: check_new_profile_likes agent rest_of_profiles
             else
-        filter_agent agent xs
+                check_new_profile_likes agent rest_of_profiles
 
-    (* Check if the current profile current profile matches with the wanted profiles *)
-    fun filter_list profiles_lst profile  =
-        case profiles_lst of        
+    (* Check if "liked" profiles "like back" the new profile *)
+    fun check_like_back profiles_list new_profile  =
+        case profiles_list of        
             [] => []
-        | (n, y, g, f, agent2, node) :: rest =>
-            if agent2 profile then
-                (n, y, g, f, agent2, node) :: filter_list rest profile
+        | ((n, y, g, f), agent, node) :: rest =>
+            if agent new_profile then
+                (n, y, g, f, agent, node) :: check_like_back rest new_profile
             else
-                filter_list rest profile
-        
+                check_like_back rest new_profile
 
     fun server state =
         let val _ = receive [
@@ -47,23 +46,22 @@ let
                     val _ = printProfile (level, name, year, gender, foods)
                     val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
 
-                    (* filter state by new user *)
-                    val matching = filter_agent agent state
-                    val _ = printString "Matching profiles:\n"
+                    val liked = check_new_profile_likes agent state
+                    val _ = printString "\nLiked profiles:"
+                    val _ = printWithLabels liked
+
+                    (* check_like_back *)
+                    val matching = check_like_back liked ((name, year, gender, foods), agent, nodeId)
+                    val _ = printString "\nMatching profiles:"
                     val _ = printWithLabels matching
 
-                    (* second round of filtering *)
-                    val matching2 = filter_list matching (name, year, gender, foods, agent, nodeId)
-                    val _ = printString "Matching profiles round 2:\n"
-                    val _ = printWithLabels matching2
-
                     val new_state =
-                    (name raisedTo level,
+                    ((name raisedTo level,
                     year raisedTo level,
                     gender raisedTo level,
-                    foods raisedTo level, 
-                    agent raisedTo level, 
-                    nodeId raisedTo level
+                    foods raisedTo level), 
+                    agent,
+                    nodeId
                     ) :: state
 
                 in
