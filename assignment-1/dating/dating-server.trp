@@ -26,18 +26,23 @@ let
             [] => []
         | ((l_prev, n_prev, y_prev, g_prev, f_prev), agent_prev, nodeId_prev)::rest_of_profiles =>
             let 
+                val _ = printString("-----------")
+                val _ = printString("NEW PROFILE:")
+                val _ = printWithLabels(l_new, n_new, y_new, g_new, f_new)
+                val _ = printString("-----------")
+                val _ = printString("IS CHECKING OUT:")
+                val _ = printWithLabels(l_prev, n_prev, y_prev, g_prev, f_prev)
+                val _ = printString("-----------")
                 val res = agent_new (l_prev, n_prev, y_prev, g_prev, f_prev)
-                val clean_res = declassify(res, authority, `{}`)
+                val clean_res = declassify(res, authority, l_prev)
                 val (preference, maybeProfile) = clean_res
             in
                 if preference then
                     let 
-                        (* Correct way to nest: Open a new let block *)
                         val res = agent_prev (l_new, n_new, y_new, g_new, f_new)
-                        val clean_res = declassify(res, authority, `{}`)
-                        val (preference_prev, _) = clean_res
+                        val (preference_prev, _) = res
                         val _ = if preference_prev then
-                                    printString("\nMutual like found!\nProfile: " ^ n_prev ^ " likes " ^ n_new ^ " and " ^ n_new ^ " likes " ^ n_prev)
+                                    printString("\nMutual like found!\n")
                                 else ()
                     in
                         maybeProfile :: check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
@@ -51,7 +56,7 @@ let
                 hn ("NEWPROFILE", ((level, name, year, gender, foods), agent, nodeId)) =>
                 let
                     val _ = printString("-----------")
-                    val _ = printString("NEW PROFILE")
+                    val _ = printString("PROFILE RECEIVED:")
                     val _ = printString("-----------")
                     val _ = printProfile ((level, name, year, gender, foods), agent, nodeId)
 
