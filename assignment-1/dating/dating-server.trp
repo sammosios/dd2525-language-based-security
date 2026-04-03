@@ -9,54 +9,59 @@ let
     fun boolToGender b =
         if b then "female" else "male"
 
-    fun printProfile (a, b, c, d, e) =
-        let val _ = print (a)
-            val _ = print (b)
-            val _ = print (c)
-            val _ = print (boolToGender d)
-            val _ = print (e)
+    fun printProfile ((a, b, c, d, e), agent, nodeId) =
+        let val _ = printWithLabels (a)
+            val _ = printWithLabels (b)
+            val _ = printWithLabels (c)
+            val _ = printWithLabels (boolToGender d)
+            val _ = printWithLabels (e)
+            val _ = printWithLabels (agent)
+            val _ = printWithLabels (nodeId)
         in
             ()
         end
 
-    (* Check if new profile "likes" any of the profiles in the state *)
-    fun check_new_profile_likes agent profiles_list =
+    fun check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) profiles_list =
         case profiles_list of
             [] => []
-        | p::rest_of_profiles =>
-            if agent p then
-                p :: check_new_profile_likes agent rest_of_profiles
-            else
-                check_new_profile_likes agent rest_of_profiles
-
-    (* Check if "liked" profiles "like back" the new profile *)
-    fun check_like_back profiles_list new_profile  =
-        case profiles_list of        
-            [] => []
-        | ((n, y, g, f), agent, node) :: rest =>
-            if agent new_profile then
-                (n, y, g, f, agent, node) :: check_like_back rest new_profile
-            else
-                check_like_back rest new_profile
+        | ((l_prev, n_prev, y_prev, g_prev, f_prev), agent_prev, nodeId_prev)::rest_of_profiles =>
+            let 
+                val res = agent_new (l_prev, n_prev, y_prev, g_prev, f_prev)
+                val clean_res = declassify(res, authority, `{}`)
+                val (preference, maybeProfile) = clean_res
+            in
+                if preference then
+                    let 
+                        (* Correct way to nest: Open a new let block *)
+                        val res = agent_prev (l_new, n_new, y_new, g_new, f_new)
+                        val clean_res = declassify(res, authority, `{}`)
+                        val (preference_prev, _) = clean_res
+                        val _ = if preference_prev then
+                                    printString("\nMutual like found!\nProfile: " ^ n_prev ^ " likes " ^ n_new ^ " and " ^ n_new ^ " likes " ^ n_prev)
+                                else ()
+                    in
+                        maybeProfile :: check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
+                    end
+                else
+                    check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
+            end
 
     fun server state =
         let val _ = receive [
                 hn ("NEWPROFILE", ((level, name, year, gender, foods), agent, nodeId)) =>
                 let
-                    val _ = printProfile (level, name, year, gender, foods)
-                    val _ = printString ("\nFrom node: " ^ nodeId ^ "\n")
+                    val _ = printString("-----------")
+                    val _ = printString("NEW PROFILE")
+                    val _ = printString("-----------")
+                    val _ = printProfile ((level, name, year, gender, foods), agent, nodeId)
 
-                    val liked = check_new_profile_likes agent state
+                    val liked = check_new_profile_likes ((level, name, year, gender, foods), agent, nodeId) state
                     val _ = printString "\nLiked profiles:"
                     val _ = printWithLabels liked
 
-                    (* check_like_back *)
-                    val matching = check_like_back liked ((name, year, gender, foods), agent, nodeId)
-                    val _ = printString "\nMatching profiles:"
-                    val _ = printWithLabels matching
-
                     val new_state =
-                    ((name raisedTo level,
+                    ((level,
+                    name raisedTo level,
                     year raisedTo level,
                     gender raisedTo level,
                     foods raisedTo level), 
@@ -84,7 +89,7 @@ let
         in  (* TODO: Feel free to comment out the next line
                      while you develop your solution and work on a few 
                      custom clients;  *)
-            (* send (whereis ("@dispatcher", "dispatcher"), ("DISPATCH", thisNode)); *)
+            send (whereis ("@dispatcher", "dispatcher"), ("DISPATCH", thisNode));
             ()
         end
 in main ()
