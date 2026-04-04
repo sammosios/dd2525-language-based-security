@@ -2,7 +2,7 @@
 
 import lists
 
-let 
+let
     fun boolToString b =
         if b then "true" else "false"
 
@@ -25,7 +25,7 @@ let
         case profiles_list of
             [] => []
         | ((l_prev, n_prev, y_prev, g_prev, f_prev), agent_prev, nodeId_prev)::rest_of_profiles =>
-            let 
+            let
                 val _ = printString("-----------")
                 val _ = printString("NEW PROFILE:")
                 val _ = printWithLabels(l_new, n_new, y_new, g_new, f_new)
@@ -33,20 +33,29 @@ let
                 val _ = printString("IS CHECKING OUT:")
                 val _ = printWithLabels(l_prev, n_prev, y_prev, g_prev, f_prev)
                 val _ = printString("-----------")
-                val res = agent_new (l_prev, n_prev, y_prev, g_prev, f_prev)
-                val clean_res = declassify(res, authority, l_prev)
-                val (preference, maybeProfile) = clean_res
-            in
-                if preference then
-                    let 
+
+                (* Call agent_new inside pini so its BL is declassified before continuing.
+                   Declassify the preference boolean to `{}` so subsequent branches are clean. *)
+                val (preference_new, maybeProfile) =
+                    let pini authority
+                        val res = agent_new (l_prev, n_prev, y_prev, g_prev, f_prev)
+                        val (pref, prof) = res
+                    in (declassify(pref, authority, `{}`), prof) end
+
+                (* Call agent_prev inside its own pini so BL from agent_new does not
+                   bleed in, and agent_prev's own BL is declassified afterwards. *)
+                val preference_prev =
+                    let pini authority
                         val res = agent_prev (l_new, n_new, y_new, g_new, f_new)
-                        val (preference_prev, _) = res
-                        val _ = if preference_prev then
-                                    printString("\nMutual like found!\n")
-                                else ()
-                    in
-                        maybeProfile :: check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
-                    end
+                        val (pref, _) = res
+                    in declassify(pref, authority, `{}`) end
+
+                val _ = if preference_new andalso preference_prev then
+                            printString("\nMutual like found!\n")
+                        else ()
+            in
+                if preference_new then
+                    maybeProfile :: check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
                 else
                     check_new_profile_likes ((l_new, n_new, y_new, g_new, f_new), agent_new, nodeId_new) rest_of_profiles
             end
@@ -54,7 +63,10 @@ let
     fun server state =
         let val _ = receive [
                 hn ("NEWPROFILE", ((level, name, year, gender, foods), agent, nodeId)) =>
-                let
+                (* pini ensures BL accumulated during this message's processing
+                   is declassified before the recursive server call, preventing
+                   leakage into subsequent message handling iterations. *)
+                let pini authority
                     val _ = printString("-----------")
                     val _ = printString("PROFILE RECEIVED:")
                     val _ = printString("-----------")
@@ -66,14 +78,13 @@ let
 
                     val new_state =
                     ((level,
-                    name raisedTo level,
-                    year raisedTo level,
-                    gender raisedTo level,
-                    foods raisedTo level), 
+                    name,
+                    year,
+                    gender,
+                    foods),
                     agent,
                     nodeId
                     ) :: state
-
                 in
                     server new_state
                 end
@@ -85,14 +96,14 @@ let
     (* Our main function starts the server and then requests the
        dispatcher to send some clients this way. *)
 
-    fun main () =       
+    fun main () =
         let val thisNode = node (self ())
             val _ = printString ("Running node with identifier: " ^ thisNode)
             (*val pid = spawn (server []) *)
             val pid = spawn (fn () => server [])
             val _ =  register ("datingServer", pid, authority)
         in  (* TODO: Feel free to comment out the next line
-                     while you develop your solution and work on a few 
+                     while you develop your solution and work on a few
                      custom clients;  *)
             send (whereis ("@dispatcher", "dispatcher"), ("DISPATCH", thisNode));
             ()
